@@ -1,0 +1,3 @@
+{
+  "MongoURI": "mongodb+srv://dbadmin:dbpass@event-booking-dev.3dbq0.mongodb.net/<dbname>?retryWrites=true&w=majority"
+}

@@ -1,12 +1,17 @@
 const express = require("express");
 const { graphqlHTTP } = require("express-graphql");
 const { buildSchema } = require("graphql");
+const connectDb = require("./config/db");
+
+// Mongoose Models
+const Event = require("./models/Event");
 
 // Set up app and json parser middleware
 const app = express();
 app.use(express.json({ extended: false }));
 
-const events = [];
+// Connect Database
+connectDb();
 
 // GraphQL server setup
 app.use(
@@ -42,19 +47,37 @@ app.use(
         }
     `),
     rootValue: {
-      events: () => {
-        return events;
+      events: async () => {
+        try {
+          const events = await Event.find();
+          if (!events) {
+            console.log("No Events.");
+          }
+          return events.map((event) => {
+            return { ...event._doc };
+          });
+        } catch (err) {
+          console.log(err);
+        }
       },
-      createEvent: (args) => {
-        const event = {
-          _id: Math.random().toString(),
-          title: args.eventInput.title,
-          description: args.eventInput.description,
-          price: +args.eventInput.price,
-          date: new Date().toISOString(),
-        };
-        events.push(event);
-        return event;
+      createEvent: async (args) => {
+        try {
+          const { title, description, price, date } = args.eventInput;
+          const event = new Event({
+            title: title,
+            description: description,
+            price: price,
+            date: new Date(date),
+          });
+          const newEvent = await event.save(event);
+          if (!newEvent) {
+            console.log("Error.");
+          }
+          return newEvent;
+        } catch (err) {
+          console.log(err);
+          throw err;
+        }
       },
     },
     graphiql: true,
